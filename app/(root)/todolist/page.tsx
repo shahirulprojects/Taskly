@@ -24,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import SplashCursor from "@/components/ui/splashcursor";
+import Aurora from "@/components/ui/aurora";
 
 const formSchema = z.object({
   activity: z.string().min(2, {
@@ -54,7 +56,13 @@ const formSchema = z.object({
 
 export default function ToDoListPage() {
   return (
-    <div className="container mx-auto py-10">
+    <div className="relative flex flex-col  items-center h-screen bg-black text-white">
+      <Aurora
+        colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+        blend={0.5}
+        amplitude={1.5}
+        speed={0.5}
+      />
       <h1 className="text-2xl font-bold mb-5">Todo List</h1>
       <ProfileForm />
     </div>
@@ -147,6 +155,51 @@ function ProfileForm() {
                 </SelectContent>
               </Select>
               <FormDescription>what type of activity is this?</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="bookingRequired"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Booking Required</FormLabel>
+                <FormDescription>
+                  does this activity require booking ahead of time?
+                </FormDescription>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="accessibility"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Accessibility (0.0 - 1.0)</FormLabel>
+              <FormControl>
+                <Slider
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  defaultValue={[field.value]}
+                  onValueChange={(vals) => field.onChange(vals[0])}
+                />
+              </FormControl>
+              <FormDescription>
+                how accessible is this activity? (0 = most accessible, 1 = least
+                accessible)
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
