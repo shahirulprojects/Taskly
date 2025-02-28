@@ -15,11 +15,41 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
-  username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
+  activity: z.string().min(2, {
+    message: "Activity must be at least 2 characters.",
   }),
+  price: z.coerce.number().min(0, {
+    message: "Price must be a positive number.",
+  }),
+  type: z.enum(
+    [
+      "education",
+      "recreational",
+      "social",
+      "diy",
+      "charity",
+      "cooking",
+      "relaxation",
+      "music",
+      "busywork",
+    ],
+    {
+      message: "Please select a valid activity type.",
+    }
+  ),
+  bookingRequired: z.boolean().default(false),
+  accessibility: z.number().min(0).max(1).default(0.5),
 });
 
 export default function ToDoListPage() {
@@ -36,7 +66,11 @@ function ProfileForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      activity: "",
+      price: 0,
+      type: "education",
+      bookingRequired: false,
+      accessibility: 0.5,
     },
   });
 
@@ -50,22 +84,6 @@ function ProfileForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Username</FormLabel>
-              <FormControl>
-                <Input placeholder="shadcn" {...field} />
-              </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <Button type="submit">Submit</Button>
       </form>
     </Form>
