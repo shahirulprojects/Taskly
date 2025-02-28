@@ -84,6 +84,73 @@ function ProfileForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="activity"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Activity</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter activity" {...field} />
+              </FormControl>
+              <FormDescription>
+                what activity do you want to add?
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Price</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
+              </FormControl>
+              <FormDescription>
+                how much does this activity cost?
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select activity type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="education">Education</SelectItem>
+                  <SelectItem value="recreational">Recreational</SelectItem>
+                  <SelectItem value="social">Social</SelectItem>
+                  <SelectItem value="diy">DIY</SelectItem>
+                  <SelectItem value="charity">Charity</SelectItem>
+                  <SelectItem value="cooking">Cooking</SelectItem>
+                  <SelectItem value="relaxation">Relaxation</SelectItem>
+                  <SelectItem value="music">Music</SelectItem>
+                  <SelectItem value="busywork">Busywork</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormDescription>what type of activity is this?</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button type="submit">Submit</Button>
       </form>
     </Form>
