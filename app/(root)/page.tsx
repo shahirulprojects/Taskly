@@ -1,14 +1,13 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import SplashCursor from "@/components/ui/splashcursor";
 import { Button } from "@/components/ui/button";
 import Threads from "@/components/ui/threads";
 const Home = () => {
   return (
     <div className="relative flex flex-col items-center justify-center h-screen bg-black overflow-hidden">
       <div className="absolute inset-0">
-        <SplashCursor />
+        <Threads amplitude={1} distance={0} enableMouseInteraction={true} />
       </div>
       <div className="relative z-10 flex flex-col items-center">
         <h1 className="text-4xl font-bold text-white">Taskly</h1>

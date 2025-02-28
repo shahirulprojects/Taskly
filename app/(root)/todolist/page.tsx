@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SplashCursor from "@/components/ui/splashcursor";
-import Aurora from "@/components/ui/aurora";
+import { Card, CardContent } from "@/components/ui/card";
 
 const formSchema = z.object({
   activity: z.string().min(2, {
@@ -54,22 +56,65 @@ const formSchema = z.object({
   accessibility: z.number().min(0).max(1).default(0.5),
 });
 
+// define the todo item type
+type TodoItem = z.infer<typeof formSchema> & { id: string };
+
 export default function ToDoListPage() {
+  // state to store our todo items
+  const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
+
+  // function to delete an item from the list
+  const handleDeleteItem = (id: string) => {
+    setTodoItems(todoItems.filter((item) => item.id !== id));
+  };
+
   return (
-    <div className="relative flex flex-col  items-center h-screen bg-black text-white">
-      <Aurora
-        colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
-        blend={0.5}
-        amplitude={1.5}
-        speed={0.5}
-      />
-      <h1 className="text-2xl font-bold mb-5">Todo List</h1>
-      <ProfileForm />
+    <div className="relative flex flex-col items-center min-h-screen overflow-hidden bg-black text-white py-10">
+      <SplashCursor />
+      <h1 className="text-4xl font-bold my-8">Todo List</h1>
+      <div className="w-full max-w-md">
+        <ToDoForm onAddTodo={(todo) => setTodoItems([...todoItems, todo])} />
+
+        {todoItems.length > 0 ? (
+          <div className="mt-8 space-y-4">
+            <h2 className="text-xl font-semibold">Your Activities</h2>
+            {todoItems.map((item) => (
+              <Card key={item.id} className="bg-black border-emerald-400">
+                <CardContent className="p-4 flex justify-between items-center text-white">
+                  <div>
+                    <h3 className="font-medium text-lg">{item.activity}</h3>
+                    <div className="text-sm text-gray-400 mt-1">
+                      <p>Type: {item.type}</p>
+                      <p>Price: ${item.price}</p>
+                      <p>
+                        Booking required: {item.bookingRequired ? "Yes" : "No"}
+                      </p>
+                      <p>Accessibility: {item.accessibility.toFixed(1)}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="h-8 w-8"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center mt-8 text-gray-400">
+            No activities added yet. Add one above!
+          </p>
+        )}
+      </div>
     </div>
   );
 }
 
-function ProfileForm() {
+function ToDoForm({ onAddTodo }: { onAddTodo: (todo: TodoItem) => void }) {
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,14 +129,22 @@ function ProfileForm() {
 
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+    // create a new todo item with a unique ID
+    const newTodo: TodoItem = {
+      ...values,
+      id: crypto.randomUUID(),
+    };
+
+    // add the new todo to the list
+    onAddTodo(newTodo);
+
+    // reset the form
+    form.reset();
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="activity"
@@ -101,8 +154,8 @@ function ProfileForm() {
               <FormControl>
                 <Input placeholder="Enter activity" {...field} />
               </FormControl>
-              <FormDescription>
-                what activity do you want to add?
+              <FormDescription className="text-gray-400">
+                What activity do you want to add?
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -123,8 +176,8 @@ function ProfileForm() {
                   onChange={(e) => field.onChange(parseFloat(e.target.value))}
                 />
               </FormControl>
-              <FormDescription>
-                how much does this activity cost?
+              <FormDescription className="text-gray-400">
+                How much does this activity cost?
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -154,7 +207,9 @@ function ProfileForm() {
                   <SelectItem value="busywork">Busywork</SelectItem>
                 </SelectContent>
               </Select>
-              <FormDescription>what type of activity is this?</FormDescription>
+              <FormDescription className="text-gray-400">
+                What type of activity is this?
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -172,8 +227,8 @@ function ProfileForm() {
               </FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel>Booking Required</FormLabel>
-                <FormDescription>
-                  does this activity require booking ahead of time?
+                <FormDescription className="text-gray-400">
+                  Does this activity require booking ahead of time?
                 </FormDescription>
               </div>
               <FormMessage />
@@ -196,15 +251,17 @@ function ProfileForm() {
                   onValueChange={(vals) => field.onChange(vals[0])}
                 />
               </FormControl>
-              <FormDescription>
-                how accessible is this activity? (0 = most accessible, 1 = least
+              <FormDescription className="text-gray-400">
+                How accessible is this activity? (0 = most accessible, 1 = least
                 accessible)
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" className="w-full">
+          Add Activity
+        </Button>
       </form>
     </Form>
   );
