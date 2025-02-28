@@ -11,7 +11,9 @@ const Home = () => {
       </div>
       <div className="relative z-10 flex flex-col items-center">
         <h1 className="text-4xl font-bold text-white">Taskly</h1>
-        <p className="text-gray-500">A simple task management app</p>
+        <p className="text-emerald-400 m-2">
+          Stay organized, stay productive – all in one place.
+        </p>
         <Link href="/todolist">
           <Button className="mt-4 bg-white text-black">Get Started</Button>
         </Link>

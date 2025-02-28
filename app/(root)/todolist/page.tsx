@@ -60,37 +60,29 @@ const formSchema = z.object({
 // define the todo item type
 type TodoItem = z.infer<typeof formSchema> & { id: string };
 
-export default function ToDoListPage() {
+// client-side only component to prevent hydration mismatch
+function ClientTodoList() {
   // state to store our todo items
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
-  // Add a state to track client-side rendering
-  const [isClient, setIsClient] = useState(false);
 
-  // Set isClient to true when component mounts (client-side only)
+  // load todo items from localStorage on component mount
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // load todo items from localStorage on component mount - only run on client
-  useEffect(() => {
-    if (isClient) {
-      const savedTodos = localStorage.getItem("todoItems");
-      if (savedTodos) {
-        try {
-          setTodoItems(JSON.parse(savedTodos));
-        } catch (e) {
-          console.error("Failed to parse saved todos:", e);
-        }
+    const savedTodos = localStorage.getItem("todoItems");
+    if (savedTodos) {
+      try {
+        setTodoItems(JSON.parse(savedTodos));
+      } catch (e) {
+        console.error("Failed to parse saved todos:", e);
       }
     }
-  }, [isClient]);
+  }, []);
 
-  // save todo items to localStorage whenever they change - only run on client
+  // save todo items to localStorage whenever they change
   useEffect(() => {
-    if (isClient && todoItems.length > 0) {
+    if (todoItems.length > 0) {
       localStorage.setItem("todoItems", JSON.stringify(todoItems));
     }
-  }, [todoItems, isClient]);
+  }, [todoItems]);
 
   // function to delete an item from the list
   const handleDeleteItem = (id: string) => {
@@ -98,9 +90,7 @@ export default function ToDoListPage() {
   };
 
   return (
-    <div className="relative flex flex-col items-center min-h-screen overflow-hidden bg-black text-white py-10">
-      <SplashCursor />
-      <h1 className="text-4xl font-bold my-8">Todo List</h1>
+    <>
       <div className="w-full max-w-md">
         <ToDoForm onAddTodo={(todo) => setTodoItems([...todoItems, todo])} />
 
@@ -112,43 +102,64 @@ export default function ToDoListPage() {
                 {todoItems.length} {todoItems.length === 1 ? "item" : "items"}
               </span>
             </div>
-            {/* Only render the list on the client side to avoid hydration mismatch */}
-            {isClient &&
-              todoItems.map((item) => (
-                <Card key={item.id} className="bg-black border-emerald-400">
-                  <CardContent className="p-4 flex justify-between items-center text-white">
-                    <div>
-                      <h3 className="font-medium text-lg">{item.activity}</h3>
-                      <div className="text-sm text-gray-400 mt-1">
-                        <p>Type: {item.type}</p>
-                        <p>Price: ${item.price}</p>
-                        <p>
-                          Booking required:{" "}
-                          {item.bookingRequired ? "Yes" : "No"}
-                        </p>
-                        <p>Accessibility: {item.accessibility.toFixed(1)}</p>
-                      </div>
+            {todoItems.map((item) => (
+              <Card key={item.id} className="bg-black border-emerald-400">
+                <CardContent className="p-4 flex justify-between items-center text-white">
+                  <div>
+                    <h3 className="font-medium text-lg">{item.activity}</h3>
+                    <div className="text-sm text-gray-400 mt-1">
+                      <p>Type: {item.type}</p>
+                      <p>Price: ${item.price}</p>
+                      <p>
+                        Booking required: {item.bookingRequired ? "Yes" : "No"}
+                      </p>
+                      <p>Accessibility: {item.accessibility.toFixed(1)}</p>
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="h-8 w-8"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="h-8 w-8"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : (
           <p className="text-center mt-8 text-gray-400">
-            {isClient
-              ? "No activities added yet. Add one above!"
-              : "Loading..."}
+            No activities added yet. Add one above!
           </p>
         )}
       </div>
+    </>
+  );
+}
+
+export default function ToDoListPage() {
+  // Add a state to track client-side rendering
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Set isMounted to true when component mounts (client-side only)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  return (
+    <div className="relative flex flex-col items-center min-h-screen overflow-hidden bg-black text-white py-10">
+      <SplashCursor />
+      <h1 className="text-4xl font-bold my-8">Todo List</h1>
+
+      {/* Only render client components after mounting to prevent hydration mismatch */}
+      {isMounted ? (
+        <ClientTodoList />
+      ) : (
+        <div className="w-full max-w-md">
+          <p className="text-center mt-8 text-gray-400">Loading...</p>
+        </div>
+      )}
     </div>
   );
 }
