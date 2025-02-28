@@ -3,8 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
+import React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +63,34 @@ type TodoItem = z.infer<typeof formSchema> & { id: string };
 export default function ToDoListPage() {
   // state to store our todo items
   const [todoItems, setTodoItems] = useState<TodoItem[]>([]);
+  // Add a state to track client-side rendering
+  const [isClient, setIsClient] = useState(false);
+
+  // Set isClient to true when component mounts (client-side only)
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // load todo items from localStorage on component mount - only run on client
+  useEffect(() => {
+    if (isClient) {
+      const savedTodos = localStorage.getItem("todoItems");
+      if (savedTodos) {
+        try {
+          setTodoItems(JSON.parse(savedTodos));
+        } catch (e) {
+          console.error("Failed to parse saved todos:", e);
+        }
+      }
+    }
+  }, [isClient]);
+
+  // save todo items to localStorage whenever they change - only run on client
+  useEffect(() => {
+    if (isClient && todoItems.length > 0) {
+      localStorage.setItem("todoItems", JSON.stringify(todoItems));
+    }
+  }, [todoItems, isClient]);
 
   // function to delete an item from the list
   const handleDeleteItem = (id: string) => {
@@ -77,36 +106,46 @@ export default function ToDoListPage() {
 
         {todoItems.length > 0 ? (
           <div className="mt-8 space-y-4">
-            <h2 className="text-xl font-semibold">Your Activities</h2>
-            {todoItems.map((item) => (
-              <Card key={item.id} className="bg-black border-emerald-400">
-                <CardContent className="p-4 flex justify-between items-center text-white">
-                  <div>
-                    <h3 className="font-medium text-lg">{item.activity}</h3>
-                    <div className="text-sm text-gray-400 mt-1">
-                      <p>Type: {item.type}</p>
-                      <p>Price: ${item.price}</p>
-                      <p>
-                        Booking required: {item.bookingRequired ? "Yes" : "No"}
-                      </p>
-                      <p>Accessibility: {item.accessibility.toFixed(1)}</p>
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Your Activities</h2>
+              <span className="bg-emerald-500 text-black font-medium px-3 py-1 rounded-full text-sm">
+                {todoItems.length} {todoItems.length === 1 ? "item" : "items"}
+              </span>
+            </div>
+            {/* Only render the list on the client side to avoid hydration mismatch */}
+            {isClient &&
+              todoItems.map((item) => (
+                <Card key={item.id} className="bg-black border-emerald-400">
+                  <CardContent className="p-4 flex justify-between items-center text-white">
+                    <div>
+                      <h3 className="font-medium text-lg">{item.activity}</h3>
+                      <div className="text-sm text-gray-400 mt-1">
+                        <p>Type: {item.type}</p>
+                        <p>Price: ${item.price}</p>
+                        <p>
+                          Booking required:{" "}
+                          {item.bookingRequired ? "Yes" : "No"}
+                        </p>
+                        <p>Accessibility: {item.accessibility.toFixed(1)}</p>
+                      </div>
                     </div>
-                  </div>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleDeleteItem(item.id)}
-                    className="h-8 w-8"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
           </div>
         ) : (
           <p className="text-center mt-8 text-gray-400">
-            No activities added yet. Add one above!
+            {isClient
+              ? "No activities added yet. Add one above!"
+              : "Loading..."}
           </p>
         )}
       </div>
@@ -173,7 +212,17 @@ function ToDoForm({ onAddTodo }: { onAddTodo: (todo: TodoItem) => void }) {
                   type="number"
                   placeholder="0"
                   {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // only parse to float if there's an actual value, otherwise use 0 or empty string
+                    field.onChange(value === "" ? "" : parseFloat(value));
+                  }}
+                  // ensure React never gets NaN as a value
+                  value={
+                    field.value === null || isNaN(field.value)
+                      ? ""
+                      : field.value
+                  }
                 />
               </FormControl>
               <FormDescription className="text-gray-400">
